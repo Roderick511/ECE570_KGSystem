@@ -137,6 +137,60 @@ The interface will print the generated Cypher query, the raw results, and a natu
 └── .env                       # API keys and Neo4j credentials (not committed)
 ```
 
+### `txt_triplet_ingest.py`
+
+**Dataclasses:**
+- `RawTriplet` — holds a single extracted (subject, relation, object) triplet along with its source file info and LLM confidence score.
+- `SourceFileRecord` — represents a loaded source file, storing its name, path, full text, and optional embedding.
+- `CanonicalNode` — a deduplicated entity node with a canonical name, aliases, source references, mention counts, and a weighted average embedding.
+- `CanonicalRelation` — a deduplicated relation label with a canonical name, aliases, and a weighted average embedding.
+
+**Main class — `TripletIngestionPipeline`:**
+| Method | Description |
+|---|---|
+| `__init__` | Initializes the OpenAI client, Neo4j driver, and all tunable parameters. |
+| `read_source_files` | Reads `.txt` files from disk into `SourceFileRecord` objects. |
+| `split_into_chunks` | Splits file text into character-bounded chunks for LLM processing. |
+| `extract_triplets_from_sources` | Orchestrates parallel chunk extraction across all source files. |
+| `extract_triplets_from_chunk` | Calls GPT to extract triplets from a single text chunk. |
+| `filter_triplets` | Removes triplets below the minimum confidence threshold. |
+| `embed_texts` | Calls the OpenAI Embeddings API and caches results. |
+| `merge_nodes` | Clusters near-duplicate entity names using cosine similarity. |
+| `merge_relations` | Clusters near-duplicate relation labels using cosine similarity. |
+| `build_graph_payload` | Assembles the final deduplicated list of nodes and edges. |
+| `write_graph_to_neo4j` | Upserts nodes and relationships into Neo4j. |
+| `semantic_search_entities` | Searches entity nodes by embedding similarity (vector index or in-memory fallback). |
+| `semantic_search_sources` | Searches source file nodes by embedding similarity. |
+| `run` | Top-level entry point: reads → extracts → filters → merges → writes. |
+
+**Utility functions:**
+- `normalize_text` / `relation_to_key` — text normalization helpers.
+- `cosine_similarity` — pure-Python cosine similarity calculation.
+- `weighted_average_embedding` — merges two embeddings proportionally by occurrence weight.
+- `split_text_into_chunks` — paragraph-aware text chunker.
+- `strip_json_fence` / `parse_json_object` — robust LLM JSON response parsers.
+
+---
+
+### `neo4j_query_interface.py`
+
+**Main class — `Neo4jQueryInterface`:**
+| Method | Description |
+|---|---|
+| `__init__` | Initializes the Neo4j driver and OpenAI client from env vars or constructor arguments. |
+| `get_database_schema` | Introspects the live Neo4j database to retrieve node labels, relationship types, and property keys. |
+| `translate_to_cypher` | Sends the schema and natural language question to GPT and returns a valid Cypher query string. |
+| `execute_cypher` | Runs a Cypher query against Neo4j and returns the raw result records. |
+| `results_to_natural_language` | Sends raw query results back to GPT to produce a concise human-readable answer. |
+| `query` | Top-level entry point: schema → Cypher → execute → summarize. |
+| `close` | Closes the Neo4j driver connection. |
+
+---
+
+## Authorship
+
+**All code in this repository was written entirely by the repository owner.** No part of the source code was generated or produced by AI tools. The project uses third-party libraries (OpenAI, Neo4j Python driver) as dependencies, and calls the OpenAI API as an external service at runtime, but every line of Python in this repository is original work by the author.
+
 ---
 
 ## Notes
