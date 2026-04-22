@@ -189,7 +189,7 @@ The interface will print the generated Cypher query, the raw results, and a natu
 
 ## Authorship
 
-**All code in this repository was written entirely by the repository owner.** No part of the source code was generated or produced by AI tools. The project uses third-party libraries (OpenAI, Neo4j Python driver) as dependencies, and calls the OpenAI API as an external service at runtime, but every line of Python in this repository is original work by the author.
+**All code in this repository was written entirely by the repository owner.** The project uses third-party libraries (OpenAI, Neo4j Python driver) as dependencies, and calls the OpenAI API as an external service at runtime, but every line of Python in this repository is original work by the author.
 
 ---
 
